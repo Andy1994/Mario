@@ -51,11 +51,5 @@ func main() {
 			c.JSON(200, gin.H{"msg": id})
 		}
 	})
-	r.Run()
-
-	//router.HandleFunc("/marios", getMarios).Methods("GET")
-	//router.HandleFunc("/mario/{id}", getMario).Methods("GET")
-	//router.HandleFunc("/mario", createMario).Methods("POST")
-	//router.HandleFunc("/mario/{id}", updateMario).Methods("POST")
-	//router.HandleFunc("/mario/{id}", deleteMario).Methods("DELETE")
+	r.Run(":5000")
 }
