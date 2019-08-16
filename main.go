@@ -2,16 +2,25 @@ package main
 
 import (
 	"double.com/Database"
+	"double.com/Model"
+	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
 var m = Database.Mario{}
+var user = Model.User{}
 
 type URI struct {
 	ID string `uri:"id"`
 }
 
 func main() {
+
+	u := Model.Mario{Length:0, Weight: 0, UpdateTime: "2019-08-10 15:04:05"}
+	u.UpdateSizeIfNeeded()
+	fmt.Println(u.Length)
+	fmt.Println(u.Weight)
+	fmt.Println(u.UpdateTime)
 
 	r := gin.Default()
 
