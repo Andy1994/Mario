@@ -3,24 +3,23 @@ package main
 import (
 	"double.com/Database"
 	"double.com/Model"
-	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
 var m = Database.Mario{}
-var user = Model.User{}
+var users map[string]*Model.User
 
 type URI struct {
 	ID string `uri:"id"`
 }
 
+type Header struct {
+	UUID string `header:"uuid"`
+}
+
 func main() {
 
-	u := Model.Mario{Length:0, Weight: 0, UpdateTime: "2019-08-10 15:04:05"}
-	u.UpdateSizeIfNeeded()
-	fmt.Println(u.Length)
-	fmt.Println(u.Weight)
-	fmt.Println(u.UpdateTime)
+	users = make(map[string]*Model.User)
 
 	r := gin.Default()
 
@@ -58,6 +57,25 @@ func main() {
 			c.JSON(400, gin.H{"error": err.Error()})
 		} else {
 			c.JSON(200, gin.H{"msg": id})
+		}
+	})
+	r.GET("/new", func(c *gin.Context) {
+		h := Header{}
+		if err := c.ShouldBindHeader(&h); err != nil {
+			c.JSON(200, err)
+		}
+		if h.UUID != "" {
+			u := users[h.UUID]
+			if u == nil {
+				u := Model.NewUser(h.UUID)
+				users[h.UUID] = u
+				c.JSON(201, u)
+			} else {
+				u.UpdateIfNeeded()
+				c.JSON(200, u)
+			}
+		} else {
+			c.JSON(400, "UUID not found!")
 		}
 	})
 	r.Run(":5000")
