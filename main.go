@@ -23,6 +23,23 @@ func main() {
 
 	r := gin.Default()
 
+	r.GET("/new", func(c *gin.Context) {
+		h := Header{}
+		c.ShouldBindHeader(&h)
+		if h.UUID != "" {
+			u := users[h.UUID]
+			if u == nil {
+				u := Model.NewUser(h.UUID)
+				users[h.UUID] = u
+				c.JSON(201, u)
+			} else {
+				u.UpdateIfNeeded()
+				c.JSON(200, u)
+			}
+		} else {
+			c.JSON(400, "UUID not found!")
+		}
+	})
 	r.GET("/marios", func(c *gin.Context) {
 		marios, err := m.GetAll()
 		if err != nil {
@@ -57,25 +74,6 @@ func main() {
 			c.JSON(400, gin.H{"error": err.Error()})
 		} else {
 			c.JSON(200, gin.H{"msg": id})
-		}
-	})
-	r.GET("/new", func(c *gin.Context) {
-		h := Header{}
-		if err := c.ShouldBindHeader(&h); err != nil {
-			c.JSON(200, err)
-		}
-		if h.UUID != "" {
-			u := users[h.UUID]
-			if u == nil {
-				u := Model.NewUser(h.UUID)
-				users[h.UUID] = u
-				c.JSON(201, u)
-			} else {
-				u.UpdateIfNeeded()
-				c.JSON(200, u)
-			}
-		} else {
-			c.JSON(400, "UUID not found!")
 		}
 	})
 	r.Run(":5000")

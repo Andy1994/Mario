@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const TimeFormat = "2006-01-02 15:04:05"
+
 type User struct {
 	ID string `json:"id"`
 	Account Account `json:"account"`
@@ -15,6 +17,7 @@ type User struct {
 
 type Assets struct {
 	Marios []Mario `json:"marios"`
+	Mushroom Mushroom `json:"mushroom"`
 }
 
 type Account struct {
@@ -27,9 +30,17 @@ type Mario struct {
 	ID string `json:"id"`                  // Mario ID
 	Length uint64 `json:"length"`          // 长度
 	Weight uint64 `json:"weight"`          // 体重
+	Hunger uint64 `json:"hunger"`          // 饥饿值
 	Growing float64 `json:"growing"`       // 成长系数
 	Nature string `json:"nature"`          // 性格
+	Level uint64 `json:"level"`            // 等级
 	UpdateTime string `json:"updateTime"`  // 更新时间
+}
+
+type Mushroom struct {
+	ID string `json:"id"`
+	Type string `json:"type"`
+	Value uint64 `json:"value"`
 }
 
 func NewUser(UUID string) *User {
@@ -62,12 +73,12 @@ func (m Mario) CurrentTime() time.Time {
 }
 
 func (m Mario) DaysBetweenLastUpdateTime(c time.Time) uint64 {
-	l, _ := time.Parse("2006-01-02 15:04:05", m.UpdateTime)
-	return uint64(c.Sub(l) / time.Millisecond) //(24 * time.Hour)
+	l, _ := time.Parse(TimeFormat, m.UpdateTime)
+	return uint64(c.Sub(l) / time.Minute) //(24 * time.Hour)
 }
 
 func (m *Mario) init(UUID string, index int) {
-	t := m.CurrentTime().Format("2006-01-02 15:04:05")
+	t := m.CurrentTime().Format(TimeFormat)
 	// ID
 	id := UUID
 	id += " "
@@ -80,9 +91,13 @@ func (m *Mario) init(UUID string, index int) {
 	// 更新时间
 	m.UpdateTime = t
 	// 长度
-	m.Length = 1
+	m.Length = 100
 	// 体重
-	m.Weight = 1
+	m.Weight = 100
+	// 饥饿值
+	m.Hunger = 0
+	// 等级
+	m.Level = 0
 	// 性格
 	m.Nature = "normal"
 }
@@ -91,18 +106,10 @@ func (m *Mario) UpdateIfNeeded()  {
 	c := m.CurrentTime()
 	day := m.DaysBetweenLastUpdateTime(c)
 	if day > 0 {
-		m.Length += uint64(float64(day) * m.Growing)
-		m.Weight += uint64(float64(day) * m.Growing)
-		m.SetUpdateTime(c.Format("2006-01-02 15:04:05"))
+		m.Length += uint64(float64(day) * m.Growing * 100)
+		m.Weight += uint64(float64(day) * m.Growing * 100)
+		m.UpdateTime = c.Format(TimeFormat)
 	}
-}
-
-func (m *Mario) SetNature(nature string) {
-	m.Nature = nature
-}
-
-func (m *Mario) SetUpdateTime(time string) {
-	m.UpdateTime = time
 }
 
 
