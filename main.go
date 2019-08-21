@@ -40,6 +40,22 @@ func main() {
 			c.JSON(400, "UUID not found!")
 		}
 	})
+	r.GET("/mushroom", func(c *gin.Context) {
+		h := Header{}
+		c.ShouldBindHeader(&h)
+		if h.UUID != "" {
+			u := users[h.UUID]
+			if u == nil {
+				c.JSON(400, "User not found!")
+			} else {
+				u.UpdateIfNeeded()
+				u.GetMushroom()
+				c.JSON(200, u)
+			}
+		} else {
+			c.JSON(400, "UUID not found!")
+		}
+	})
 	r.GET("/marios", func(c *gin.Context) {
 		marios, err := m.GetAll()
 		if err != nil {

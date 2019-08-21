@@ -41,12 +41,28 @@ type Mushroom struct {
 	ID string `json:"id"`
 	Type string `json:"type"`
 	Value uint64 `json:"value"`
+	UpdateTime string `json:"updateTime"`
 }
 
 func NewUser(UUID string) *User {
 	u := User{ID:UUID}
 	u.Born()
+	u.GetMushroom()
 	return &u
+}
+
+func CurrentTime() time.Time {
+	return time.Now().UTC()
+}
+
+func DaysBetweenLastUpdateTime(c time.Time, updateTime string) uint64 {
+	u, _ := time.Parse(TimeFormat, updateTime)
+	return uint64(c.Sub(u) / time.Hour)
+}
+
+func TimeStringAddDays(updateTime string, days uint64) string {
+	u, _ := time.Parse(TimeFormat, updateTime)
+	return u.Add(time.Duration(days) * time.Hour).Format(TimeFormat)
 }
 
 func (u *User) Born() {
@@ -60,25 +76,51 @@ func (u *User) Born() {
 }
 
 func (u *User) UpdateIfNeeded() {
+	c := CurrentTime()
 	var marios []Mario
 	for _, m := range u.Assets.Marios {
-		m.UpdateIfNeeded()
+		days := DaysBetweenLastUpdateTime(c, m.UpdateTime)
+		growing := uint64(float64(days) * m.Growing * 100)
+		if days > 0 && u.Assets.Mushroom.Value != 0 {
+			if u.Assets.Mushroom.Value >= growing {
+				u.Assets.Mushroom.Value -= growing
+				m.Length += growing
+				m.Weight += growing
+				m.UpdateTime = TimeStringAddDays(m.UpdateTime, days)
+			} else {
+				m.Length += u.Assets.Mushroom.Value
+				m.Weight += u.Assets.Mushroom.Value
+				m.UpdateTime = TimeStringAddDays(m.UpdateTime, days)
+				u.Assets.Mushroom.Value = 0
+			}
+		}
 		marios = append(marios, m)
 	}
 	u.Assets.Marios = marios
 }
 
-func (m Mario) CurrentTime() time.Time {
-	return time.Now().UTC()
+func (u *User) GetMushroom() {
+	if len(u.Assets.Mushroom.ID) == 0 {
+		u.Assets.Mushroom.Init()
+	} else if DaysBetweenLastUpdateTime(CurrentTime(), u.Assets.Mushroom.UpdateTime) > 0 {
+		u.Assets.Mushroom.Add()
+	}
 }
 
-func (m Mario) DaysBetweenLastUpdateTime(c time.Time) uint64 {
-	l, _ := time.Parse(TimeFormat, m.UpdateTime)
-	return uint64(c.Sub(l) / time.Minute) //(24 * time.Hour)
+func (m *Mushroom) Init() {
+	m.ID = "2333"
+	m.Type = "normal"
+	m.Value = 10000
+	m.UpdateTime = CurrentTime().Format(TimeFormat)
+}
+
+func (m *Mushroom) Add() {
+	m.Value += 10000
+	m.UpdateTime = CurrentTime().Format(TimeFormat)
 }
 
 func (m *Mario) init(UUID string, index int) {
-	t := m.CurrentTime().Format(TimeFormat)
+	t := CurrentTime().Format(TimeFormat)
 	// ID
 	id := UUID
 	id += " "
@@ -87,6 +129,7 @@ func (m *Mario) init(UUID string, index int) {
 	id += strconv.Itoa(index)
 	m.ID = id
 	// 成长系数
+	rand.Seed(time.Now().UnixNano())
 	m.Growing = 1 + math.Round(rand.Float64() * 100) / 100
 	// 更新时间
 	m.UpdateTime = t
@@ -100,16 +143,6 @@ func (m *Mario) init(UUID string, index int) {
 	m.Level = 0
 	// 性格
 	m.Nature = "normal"
-}
-
-func (m *Mario) UpdateIfNeeded()  {
-	c := m.CurrentTime()
-	day := m.DaysBetweenLastUpdateTime(c)
-	if day > 0 {
-		m.Length += uint64(float64(day) * m.Growing * 100)
-		m.Weight += uint64(float64(day) * m.Growing * 100)
-		m.UpdateTime = c.Format(TimeFormat)
-	}
 }
 
 
